@@ -16,9 +16,11 @@ VSVersionInfo(
         StringStruct('FileDescription', 'StickyDot - Google Keep Desktop Notes'),
         StringStruct('FileVersion', '4.2.1'),
         StringStruct('InternalName', 'StickyDot'),
+        StringStruct('LegalCopyright', 'Copyright (c) justdataplease.com'),
         StringStruct('OriginalFilename', 'StickyDot.exe'),
         StringStruct('ProductName', 'StickyDot'),
-        StringStruct('ProductVersion', '4.2.1')
+        StringStruct('ProductVersion', '4.2.1'),
+        StringStruct('Comments', 'Unofficial Google Keep notes widget. Source: https://github.com/justdataplease/StickyDot')
       ])
     ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])

@@ -1,5 +1,5 @@
 ---
-name: release-StickyDot
+name: release-stickydot
 description: Prepare, verify, tag, and publish portable StickyDot Windows releases. Use when creating a new StickyDot version, release build, Git tag, GitHub Release, release notes, or validating that the portable EXE is safe to publish.
 ---
 
@@ -15,7 +15,7 @@ Produce one release artifact: `dist\StickyDot.exe`. Do not create or publish set
 4. Run the deterministic verification script:
 
    ```powershell
-   .\.claude\skills\release-StickyDot\scripts\prepare_release.ps1 -Version X.Y.Z
+   .\.claude\skills\release-stickydot\scripts\prepare_release.ps1 -Version X.Y.Z
    ```
 
 5. Launch `dist\StickyDot.exe`. Verify the window title, responsiveness, Google Keep connection, theme, compact search, autosave, startup toggle, list editing, and window resizing. Do not expose note content or credentials in logs.

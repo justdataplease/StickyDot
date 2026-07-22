@@ -26,11 +26,11 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertFalse((ROOT / "settings.json").exists())
 
     def test_claude_release_skill_enforces_portable_only_builds(self) -> None:
-        skill = (ROOT / ".claude" / "skills" / "release-StickyDot" / "SKILL.md").read_text(encoding="utf-8")
+        skill = (ROOT / ".claude" / "skills" / "release-stickydot" / "SKILL.md").read_text(encoding="utf-8")
         script = (
-            ROOT / ".claude" / "skills" / "release-StickyDot" / "scripts" / "prepare_release.ps1"
+            ROOT / ".claude" / "skills" / "release-stickydot" / "scripts" / "prepare_release.ps1"
         ).read_text(encoding="utf-8")
-        self.assertIn("name: release-StickyDot", skill)
+        self.assertIn("name: release-stickydot", skill)
         self.assertIn("one release artifact", skill)
         self.assertIn("PortableOnly = $true", script)
         self.assertIn("StickyDot-Setup-*.exe", script)

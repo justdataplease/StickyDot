@@ -21,6 +21,7 @@ $workPath = Join-Path ([System.IO.Path]::GetTempPath()) "StickyDotBuild-$PID"
     --workpath $workPath `
     --onefile `
     --windowed `
+    --noupx `
     --name "StickyDot" `
     --icon "assets\stickydot.ico" `
     --add-data "assets\stickydot.ico;assets" `
