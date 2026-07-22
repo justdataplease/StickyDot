@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
-$runningWidget = @(Get-Process -Name "KeepNotesWidget" -ErrorAction SilentlyContinue) + @(Get-Process -Name "JustNotes" -ErrorAction SilentlyContinue) + @(Get-Process -Name "StickyDot" -ErrorAction SilentlyContinue)
+$runningWidget = @(Get-Process -Name "KeepNotesWidget" -ErrorAction SilentlyContinue) + @(Get-Process -Name "JustNotes" -ErrorAction SilentlyContinue) + @(Get-Process -Name "StickyFeather" -ErrorAction SilentlyContinue) + @(Get-Process -Name "StickyDot" -ErrorAction SilentlyContinue)
 if ($runningWidget) {
     $runningWidget | Stop-Process -Force
     $runningWidget | Wait-Process -ErrorAction SilentlyContinue
@@ -57,6 +57,9 @@ if (Test-Path "dist\KeepNotesWidget.exe") {
 }
 if (Test-Path "dist\JustNotes.exe") {
     Remove-Item -LiteralPath "dist\JustNotes.exe" -Force
+}
+if (Test-Path "dist\StickyFeather.exe") {
+    Remove-Item -LiteralPath "dist\StickyFeather.exe" -Force
 }
 
 Write-Host ""
