@@ -1,0 +1,63 @@
+$ErrorActionPreference = "Stop"
+Set-Location $PSScriptRoot
+
+$runningWidget = @(Get-Process -Name "KeepNotesWidget" -ErrorAction SilentlyContinue) + @(Get-Process -Name "JustNotes" -ErrorAction SilentlyContinue) + @(Get-Process -Name "StickyDot" -ErrorAction SilentlyContinue)
+if ($runningWidget) {
+    $runningWidget | Stop-Process -Force
+    $runningWidget | Wait-Process -ErrorAction SilentlyContinue
+}
+
+if (-not (Test-Path ".venv\Scripts\python.exe")) {
+    python -m venv .venv
+}
+
+$workPath = Join-Path ([System.IO.Path]::GetTempPath()) "StickyDotBuild-$PID"
+
+& ".venv\Scripts\python.exe" -m pip install --disable-pip-version-check -r requirements-build.txt
+& ".venv\Scripts\python.exe" tools\generate_icon.py
+& ".venv\Scripts\pyinstaller.exe" `
+    --noconfirm `
+    --clean `
+    --workpath $workPath `
+    --onefile `
+    --windowed `
+    --name "StickyDot" `
+    --icon "assets\stickydot.ico" `
+    --add-data "assets\stickydot.ico;assets" `
+    --add-data "assets\dot-mark.png;assets" `
+    --add-data "assets\dot-bubble.png;assets" `
+    --version-file "assets\version_info.txt" `
+    --copy-metadata "urllib3" `
+    --copy-metadata "gpsoauth" `
+    --hidden-import "windows_integration" `
+    notes_widget.py
+
+if ($LASTEXITCODE -ne 0) {
+    throw "PyInstaller failed with exit code $LASTEXITCODE"
+}
+
+$tempRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
+$resolvedWorkPath = [System.IO.Path]::GetFullPath($workPath)
+if (-not $resolvedWorkPath.StartsWith($tempRoot, [System.StringComparison]::OrdinalIgnoreCase) -or
+    -not ([System.IO.Path]::GetFileName($resolvedWorkPath)).StartsWith("StickyDotBuild-", [System.StringComparison]::Ordinal)) {
+    throw "Refusing to clean unexpected build path: $resolvedWorkPath"
+}
+if (Test-Path -LiteralPath $resolvedWorkPath) {
+    Remove-Item -LiteralPath $resolvedWorkPath -Recurse -Force
+}
+
+if (Test-Path "dist\NotesWidget.exe") {
+    Remove-Item -LiteralPath "dist\NotesWidget.exe" -Force
+}
+if (Test-Path "dist\GoogleKeepWidget.exe") {
+    Remove-Item -LiteralPath "dist\GoogleKeepWidget.exe" -Force
+}
+if (Test-Path "dist\KeepNotesWidget.exe") {
+    Remove-Item -LiteralPath "dist\KeepNotesWidget.exe" -Force
+}
+if (Test-Path "dist\JustNotes.exe") {
+    Remove-Item -LiteralPath "dist\JustNotes.exe" -Force
+}
+
+Write-Host ""
+Write-Host "Built: $PSScriptRoot\dist\StickyDot.exe" -ForegroundColor Green

@@ -1,0 +1,15 @@
+.venv/
+build/
+dist/
+__pycache__/
+*.spec
+*.pyc
+.coverage
+.pytest_cache/
+.idea/
+.vscode/
+settings.json
+*.pfx
+*.p12
+*.pem
+*.key
