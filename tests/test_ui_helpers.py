@@ -216,5 +216,49 @@ class UndoHistoryTests(unittest.TestCase):
         self.assertEqual("v4", history.current)
 
 
+class ClickAwayCollapseTests(unittest.TestCase):
+    """A borderless off-top window has no taskbar button, so clicking another
+    app must collapse it to the always-on-top dot bubble instead of burying it."""
+
+    def _widget(self, *, topmost: bool, minimized: bool = False, closing: bool = False) -> NotesWidget:
+        widget = NotesWidget.__new__(NotesWidget)
+        widget.root = MainThreadRoot()
+        widget.settings = type("Settings", (), {"data": {"topmost": topmost}})()
+        widget.minimized_to_bubble = minimized
+        widget.closing = closing
+        return widget
+
+    def test_click_away_schedules_a_collapse_when_not_pinned_on_top(self) -> None:
+        widget = self._widget(topmost=False)
+        widget._on_root_deactivate(None)
+        self.assertEqual(1, len(widget.root.callbacks))
+
+    def test_click_away_is_ignored_while_always_on_top(self) -> None:
+        widget = self._widget(topmost=True)
+        widget._on_root_deactivate(None)
+        self.assertEqual([], widget.root.callbacks)
+
+    def test_click_away_is_ignored_while_already_a_bubble(self) -> None:
+        widget = self._widget(topmost=False, minimized=True)
+        widget._on_root_deactivate(None)
+        self.assertEqual([], widget.root.callbacks)
+
+    def test_switching_to_another_app_collapses_to_the_bubble(self) -> None:
+        widget = self._widget(topmost=False)
+        calls: list[str] = []
+        widget.minimize = lambda: calls.append("minimize")  # type: ignore[method-assign]
+        widget._foreground_is_own_window = lambda: False  # type: ignore[method-assign]
+        widget._collapse_if_switched_away()
+        self.assertEqual(["minimize"], calls)
+
+    def test_clicking_our_own_menu_leaves_the_window_open(self) -> None:
+        widget = self._widget(topmost=False)
+        calls: list[str] = []
+        widget.minimize = lambda: calls.append("minimize")  # type: ignore[method-assign]
+        widget._foreground_is_own_window = lambda: True  # type: ignore[method-assign]
+        widget._collapse_if_switched_away()
+        self.assertEqual([], calls)
+
+
 if __name__ == "__main__":
     unittest.main()

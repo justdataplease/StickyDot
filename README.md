@@ -2,7 +2,7 @@
 
 A compact, always-on-top Google Keep client for Windows 11. It gives you a focused desktop list and editor while your notes stay synced with your existing Google Keep account.
 
-### ⬇️ [Download StickyDot.exe](https://github.com/justdataplease/StickyDot/releases/latest/download/StickyDot.exe) &nbsp;·&nbsp; [Release notes (v4.2.1)](https://github.com/justdataplease/StickyDot/releases/latest) &nbsp;·&nbsp; [All releases](https://github.com/justdataplease/StickyDot/releases)
+### ⬇️ [Download StickyDot.exe](https://github.com/justdataplease/StickyDot/releases/latest/download/StickyDot.exe) &nbsp;·&nbsp; [Release notes (v4.2.2)](https://github.com/justdataplease/StickyDot/releases/latest) &nbsp;·&nbsp; [All releases](https://github.com/justdataplease/StickyDot/releases)
 
 Single portable `.exe`. No installer, no Python, no account server — StickyDot talks directly to Google through the community [`gkeepapi`](https://github.com/kiwiz/gkeepapi) client.
 

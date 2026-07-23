@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import os
 import re
 import sys
 import tkinter as tk
@@ -563,6 +564,10 @@ class NotesWidget:
         self.root.bind_all("<F5>", lambda _event: self.refresh_from_keep())
         self.root.bind_all("<Escape>", lambda _event: self.show_list() if self.current_mode == "note" else None)
         self.root.bind("<Map>", self._restore_override)
+        # When "always on top" is off a borderless window has no taskbar button,
+        # so clicking another app would bury it with no way back. Collapse to the
+        # always-on-top dot bubble instead of letting it vanish.
+        self.root.bind("<Deactivate>", self._on_root_deactivate)
 
     def _clear_content(self) -> None:
         self.root.unbind_all("<MouseWheel>")
@@ -1756,6 +1761,48 @@ class NotesWidget:
                 height + event.y_root - start_y,
             )
             self.root.geometry(f"{resized_width}x{resized_height}")
+
+    def _on_root_deactivate(self, _event: tk.Event) -> None:
+        """Collapse to the dot bubble when the user clicks away.
+
+        Only when "always on top" is off: a topmost window stays visible on its
+        own, but an off-top borderless window has no taskbar button, so losing
+        focus would strand it behind whatever was clicked.
+        """
+        if self.minimized_to_bubble or self.closing:
+            return
+        if self.settings.data.get("topmost", True):
+            return
+        # Let the OS settle the new foreground window, then confirm the user
+        # switched to another application rather than one of our own pop-ups.
+        self.root.after(100, self._collapse_if_switched_away)
+
+    def _collapse_if_switched_away(self) -> None:
+        if self.minimized_to_bubble or self.closing:
+            return
+        if self.settings.data.get("topmost", True):
+            return
+        if self._foreground_is_own_window():
+            return
+        self.minimize()
+
+    def _foreground_is_own_window(self) -> bool:
+        """True when the active window belongs to StickyDot (a menu, tooltip or
+        dialog) rather than another application."""
+        if sys.platform != "win32":
+            # focus_get() is None only when no window in this app holds focus.
+            return self.root.focus_get() is not None
+        try:
+            user32 = ctypes.windll.user32
+            user32.GetForegroundWindow.restype = ctypes.c_void_p
+            hwnd = user32.GetForegroundWindow()
+            if not hwnd:
+                return False
+            pid = ctypes.c_ulong()
+            user32.GetWindowThreadProcessId(ctypes.c_void_p(hwnd), ctypes.byref(pid))
+            return pid.value == os.getpid()
+        except (AttributeError, OSError):
+            return self.root.focus_get() is not None
 
     def minimize(self) -> None:
         if self.minimized_to_bubble:
