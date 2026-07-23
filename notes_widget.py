@@ -28,6 +28,7 @@ PROJECT_URL = "https://justdataplease.com"
 MIN_WINDOW_WIDTH = 340
 MIN_WINDOW_HEIGHT = 420
 BUBBLE_SIZE = 64
+CLICK_AWAY_POLL_MS = 125
 
 
 class Palette:
@@ -401,6 +402,10 @@ class NotesWidget:
         self.normal_class_style: int | None = None
         self.pending_operations = 0
         self.closing = False
+        self.click_away_job: str | None = None
+        # The window starts in the foreground on a normal launch. Treat it as
+        # armed immediately so a very fast click into another app is not missed.
+        self._own_window_was_foreground = True
         self.editor_revision = 0
         self.new_menu: tk.Toplevel | None = None
         self.settings_menu: tk.Toplevel | None = None
@@ -411,6 +416,7 @@ class NotesWidget:
         self._build_shell()
         self._bind_shortcuts()
         self.root.after(50, self._apply_windows_style)
+        self.click_away_job = self.root.after(CLICK_AWAY_POLL_MS, self._monitor_click_away)
 
         credentials = self.settings.credentials()
         if credentials:
@@ -1672,6 +1678,10 @@ class NotesWidget:
         enabled = not bool(self.settings.data.get("topmost", True))
         self.settings.data["topmost"] = enabled
         self.root.attributes("-topmost", enabled)
+        if not enabled:
+            # Clicking this button proves the widget is currently foreground;
+            # arm the polling fallback before the user's next click.
+            self._own_window_was_foreground = True
         self.pin_button.configure(text="◆" if enabled else "◇", fg=Palette.ACCENT if enabled else Palette.DIM)
         self.settings.save()
         self.status.configure(text="Always on top" if enabled else "Always on top off")
@@ -1785,6 +1795,31 @@ class NotesWidget:
         if self._foreground_is_own_window():
             return
         self.minimize()
+
+    def _monitor_click_away(self) -> None:
+        """Catch click-away transitions that Tk's <Deactivate> event misses.
+
+        Borderless override-redirect windows do not reliably receive native
+        activation events on Windows. Polling the foreground process gives the
+        unpinned widget a dependable path to its always-on-top dot bubble.
+        """
+        self.click_away_job = None
+        if self.closing:
+            return
+
+        foreground_is_ours = self._foreground_is_own_window()
+        should_collapse = (
+            not self.minimized_to_bubble
+            and not self.settings.data.get("topmost", True)
+            and self._own_window_was_foreground
+            and not foreground_is_ours
+        )
+        self._own_window_was_foreground = foreground_is_ours
+        if should_collapse:
+            self.minimize()
+
+        if not self.closing:
+            self.click_away_job = self.root.after(CLICK_AWAY_POLL_MS, self._monitor_click_away)
 
     def _foreground_is_own_window(self) -> bool:
         """True when the active window belongs to StickyDot (a menu, tooltip or
@@ -2209,6 +2244,7 @@ class NotesWidget:
         self.minimized_to_bubble = False
         self.root.lift()
         self.root.focus_force()
+        self._own_window_was_foreground = True
         self.root.after(20, self._apply_windows_style)
 
     def _restored_window_geometry(self) -> str:

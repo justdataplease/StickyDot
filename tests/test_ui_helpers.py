@@ -226,6 +226,8 @@ class ClickAwayCollapseTests(unittest.TestCase):
         widget.settings = type("Settings", (), {"data": {"topmost": topmost}})()
         widget.minimized_to_bubble = minimized
         widget.closing = closing
+        widget.click_away_job = None
+        widget._own_window_was_foreground = True
         return widget
 
     def test_click_away_schedules_a_collapse_when_not_pinned_on_top(self) -> None:
@@ -258,6 +260,35 @@ class ClickAwayCollapseTests(unittest.TestCase):
         widget._foreground_is_own_window = lambda: True  # type: ignore[method-assign]
         widget._collapse_if_switched_away()
         self.assertEqual([], calls)
+
+    def test_foreground_poll_collapses_when_deactivate_event_is_missed(self) -> None:
+        widget = self._widget(topmost=False)
+        calls: list[str] = []
+        widget.minimize = lambda: calls.append("minimize")  # type: ignore[method-assign]
+        widget._foreground_is_own_window = lambda: False  # type: ignore[method-assign]
+        widget._monitor_click_away()
+        self.assertEqual(["minimize"], calls)
+        self.assertEqual(1, len(widget.root.callbacks))
+
+    def test_foreground_poll_does_not_collapse_an_unarmed_background_window(self) -> None:
+        widget = self._widget(topmost=False)
+        widget._own_window_was_foreground = False
+        calls: list[str] = []
+        widget.minimize = lambda: calls.append("minimize")  # type: ignore[method-assign]
+        widget._foreground_is_own_window = lambda: False  # type: ignore[method-assign]
+        widget._monitor_click_away()
+        self.assertEqual([], calls)
+
+    def test_foreground_poll_arms_after_the_widget_becomes_active(self) -> None:
+        widget = self._widget(topmost=False)
+        widget._own_window_was_foreground = False
+        foreground = iter((True, False))
+        calls: list[str] = []
+        widget.minimize = lambda: calls.append("minimize")  # type: ignore[method-assign]
+        widget._foreground_is_own_window = lambda: next(foreground)  # type: ignore[method-assign]
+        widget._monitor_click_away()
+        widget._monitor_click_away()
+        self.assertEqual(["minimize"], calls)
 
 
 if __name__ == "__main__":
